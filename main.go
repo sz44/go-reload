@@ -26,7 +26,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 //	func helloHandler(w http.ResponseWriter, r *http.Request) {
 //		fmt.Fprintln(w, "Hello from myHandleFunc")
 //	}
-func main() {
+func notmain() {
 	test()
 	fmt.Println("hello goodbye")
 	// http.Handle("/h", mh)
