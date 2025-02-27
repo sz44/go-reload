@@ -10,9 +10,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func buildMain() {
-	cmd := exec.Command("go", "build", "-o main", ".")
-
+func build() {
+	cmd := exec.Command("go", "build", "-o", "./server/main", "./server")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -39,7 +38,7 @@ func (pm *ProcessManager) Start() {
 		log.Println("Process already running!")
 		return
 	}
-	pm.cmd = exec.Command("./servermain")
+	pm.cmd = exec.Command("./server/main")
 	pm.cmd.Stderr = os.Stderr
 	pm.cmd.Stdout = os.Stdout
 
@@ -73,53 +72,52 @@ func test() {
 	time.Sleep(50 * time.Millisecond)
 }
 
-func prog() {
+func handleProcess(pm *ProcessManager) {
+	pm.Stop()
+	build()
+	time.Sleep(50 * time.Millisecond)
+	pm.Start()
+}
+func Watch(watcher *fsnotify.Watcher, pm *ProcessManager) {
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
+			}
+			log.Println("event: ", event)
+			if event.Has(fsnotify.Write) {
+				pm.Stop()
+				build()
+				pm.Start()
+			}
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			log.Println("error", err)
+		}
+	}
+}
+
+func main() {
+	// initial build
+	build()
+	// initial run
+	serverProcess := NewProcessManager()
+	serverProcess.Start()
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
 
-	go func() {
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				log.Println("event: ", event)
-				if event.Has(fsnotify.Write) {
-					// stop
-					// build with command go build .
-					// run the binary
-					log.Println("modified file:", event.Name)
-
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Println("error", err)
-			}
-		}
-	}()
-
-	err = watcher.Add(".")
+	fmt.Println("Starting live reload watcher...")
+	go Watch(watcher, serverProcess)
+	err = watcher.Add("./server")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	<-make(chan any)
-}
-
-func main() {
-	// initial build
-	// buildMain()
-	// initial run
-	serverProcess := NewProcessManager()
-	serverProcess.Start()
-	time.Sleep(2 * time.Second)
-	serverProcess.Stop()
-	time.Sleep(2 * time.Second)
-	serverProcess.Start()
+	select {}
 }

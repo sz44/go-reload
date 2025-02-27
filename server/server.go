@@ -8,8 +8,9 @@ import (
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello")
 		fmt.Fprintf(w, "the current time is: %v", time.Now())
 	})
-	fmt.Println("listening on http://127.0.0.1:3000")
-	http.ListenAndServe(":3000", nil)
+	fmt.Println("-- listening on http://127.0.0.1:3001")
+	http.ListenAndServe(":3001", nil)
 }
