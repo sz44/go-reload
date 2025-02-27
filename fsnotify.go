@@ -10,6 +10,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+// TODO: make build part of ProcessManager
 func build() {
 	cmd := exec.Command("go", "build", "-o", "./server/main", "./server")
 	cmd.Stdout = os.Stdout
